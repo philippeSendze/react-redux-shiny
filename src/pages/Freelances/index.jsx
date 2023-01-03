@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom'
 import Card from '../../components/Card'
 import colors from '../../utils/style/colors'
 import { Loader } from '../../utils/style/Atoms'
-import { useFetch } from '../../utils/hooks'
 import { useSelector } from 'react-redux'
-import { selectTheme } from '../../utils/selectors'
+import { selectFreelances, selectTheme } from '../../utils/selectors'
+import { useStore } from 'react-redux'
+import { useEffect } from 'react'
+import { fetchOrUpdateFreelances } from '../../features/freelances'
 
 const CardsContainer = styled.div`
   display: grid;
@@ -39,13 +41,20 @@ const LoaderWrapper = styled.div`
 
 function Freelances() {
   const theme = useSelector(selectTheme)
-  const { data, isLoading, error } = useFetch(
-    `http://localhost:8000/freelances`
-  )
+  const store = useStore()
 
-  const freelancersList = data?.freelancersList
+  // on utilise useEffect pour lancer la requête au chargement du composant
+  useEffect(() => {
+    // on exécute notre action asynchrone avec le store en paramètre
+    fetchOrUpdateFreelances(store)
+    // On suit la recommandation d'ESLint de passer le store
+    // en dépendances car il est utilisé dans l'effet
+    // cela n'as pas d'impacte sur le fonctionnement car le store ne change jamais
+  }, [store])
 
-  if (error) {
+  const freelances = useSelector(selectFreelances)
+
+  if (freelances.status === 'rejected') {
     return <span>Il y a un problème</span>
   }
 
@@ -55,13 +64,13 @@ function Freelances() {
       <PageSubtitle theme={theme}>
         Chez Shiny nous réunissons les meilleurs profils pour vous.
       </PageSubtitle>
-      {isLoading ? (
+      {freelances.status === 'pending' || freelances.status === 'updating' ? (
         <LoaderWrapper>
           <Loader theme={theme} data-testid="loader" />
         </LoaderWrapper>
       ) : (
         <CardsContainer>
-          {freelancersList?.map((profile) => (
+          {freelances.data?.freelancersList.map((profile) => (
             <Link key={`freelance-${profile.id}`} to={`/profile/${profile.id}`}>
               <Card
                 label={profile.job}

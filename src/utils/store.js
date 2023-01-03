@@ -1,4 +1,7 @@
 import { combineReducers, createStore } from 'redux'
+import freelanceReducer from '../features/freelance'
+import freelancesReducer from '../features/freelances'
+import surveyReducer from '../features/survey'
 import themeReducer from '../features/theme'
 
 const reduxDevtools =
@@ -9,6 +12,9 @@ const reduxDevtools =
 const reducer = combineReducers({
   // le themeReducer est responsable de la propriété `theme` du state
   theme: themeReducer,
+  freelances: freelancesReducer,
+  freelance: freelanceReducer,
+  survey: surveyReducer,
 })
 
 // on utilise le reducer créé avec combineReducers
