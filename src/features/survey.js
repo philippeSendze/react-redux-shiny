@@ -1,5 +1,5 @@
 import { selectSurvey } from '../utils/selectors'
-import produce from 'immer'
+import { createReducer, createAction } from '@reduxjs/toolkit'
 
 const initialState = {
   status: 'void',
@@ -7,67 +7,46 @@ const initialState = {
   error: null,
 }
 
-const FETCHING = 'survey/fetching'
-const RESOLVED = 'survey/resolved'
-const REJECTED = 'survey/rejected'
+const surveyFetching = createAction('survey/fetching')
+const surveyResolved = createAction('survey/resolved')
+const surveyRejected = createAction('survey/rejected')
 
-export const surveyFetching = () => ({ type: FETCHING })
-export const surveyResolved = (data) => ({ type: RESOLVED, payload: data })
-export const surveyRejected = (error) => ({
-  type: REJECTED,
-  payload: error,
-})
-
-export default function surveyReducer(state = initialState, action) {
-  // on utilise immer pour changer le state
-  return produce(state, (draft) => {
-    // on fait un switch sur le type de l'action
-    switch (action.type) {
-      case FETCHING: {
-        if (draft.status === 'void') {
-          draft.status = 'pending'
-          return
-        }
-        if (draft.status === 'rejected') {
-          draft.error = null
-          draft.status = 'pending'
-        }
-
-        if (draft.status === 'resolved') {
-          draft.status = 'updating'
-          return
-        }
+export default createReducer(initialState, (builder) =>
+  builder
+    .addCase(surveyFetching, (draft, action) => {
+      if (draft.status === 'void') {
+        draft.status = 'pending'
         return
       }
-
-      case RESOLVED: {
-        // si la requête est en cours
-        if (draft.status === 'pending' || draft.status === 'updating') {
-          draft.data = action.payload
-          draft.status = 'resolved'
-          return
-        }
+      if (draft.status === 'rejected') {
+        draft.error = null
+        draft.status = 'pending'
         return
       }
-
-      case REJECTED: {
-        if (draft.status === 'pending' || draft.status === 'updating') {
-          // on passe en rejected, on sauvegarde l'erreur et on supprime les données
-          draft.status = 'rejected'
-          draft.error = action.payload
-          draft.data = null
-        }
-        // sinon l'action est ignorée
+      if (draft.status === 'resolved') {
+        draft.status = 'updating'
         return
       }
-
-      // Sinon (action invalide ou initialisation)
-      default:
-        // on ne fait rien (retourne le state sans modifications)
+      return
+    })
+    .addCase(surveyResolved, (draft, action) => {
+      if (draft.status === 'pending' || draft.status === 'updating') {
+        draft.data = action.payload
+        draft.status = 'resolved'
         return
-    }
-  })
-}
+      }
+      return
+    })
+    .addCase(surveyRejected, (draft, action) => {
+      if (draft.status === 'pending' || draft.status === 'updating') {
+        draft.error = action.payload
+        draft.data = null
+        draft.status = 'rejected'
+        return
+      }
+      return
+    })
+)
 
 export async function fetchOrUpdateSurvey(store) {
   const status = selectSurvey(store.getState()).status
