@@ -4,10 +4,8 @@ import Card from '../../components/Card'
 import colors from '../../utils/style/colors'
 import { Loader } from '../../utils/style/Atoms'
 import { useSelector } from 'react-redux'
-import { selectFreelances, selectTheme } from '../../utils/selectors'
-import { useDispatch } from 'react-redux'
-import { useEffect } from 'react'
-import { fetchOrUpdateFreelances } from '../../features/freelances'
+import { selectTheme } from '../../utils/selectors'
+import { useQuery } from 'react-query'
 
 const CardsContainer = styled.div`
   display: grid;
@@ -41,15 +39,14 @@ const LoaderWrapper = styled.div`
 
 function Freelances() {
   const theme = useSelector(selectTheme)
-  const dispatch = useDispatch()
 
-  useEffect(() => {
-    dispatch(fetchOrUpdateFreelances)
-  }, [dispatch])
+  const { data, isLoading, error } = useQuery('freelances', async () => {
+    const response = await fetch('http://localhost:8000/freelances')
+    const data = await response.json()
+    return data
+  })
 
-  const freelances = useSelector(selectFreelances)
-
-  if (freelances.status === 'rejected') {
+  if (error) {
     return <span>Il y a un problème</span>
   }
 
@@ -59,13 +56,13 @@ function Freelances() {
       <PageSubtitle theme={theme}>
         Chez Shiny nous réunissons les meilleurs profils pour vous.
       </PageSubtitle>
-      {freelances.status === 'pending' || freelances.status === 'updating' ? (
+      {isLoading ? (
         <LoaderWrapper>
           <Loader theme={theme} data-testid="loader" />
         </LoaderWrapper>
       ) : (
         <CardsContainer>
-          {freelances.data?.freelancersList.map((profile) => (
+          {data?.freelancersList.map((profile) => (
             <Link key={`freelance-${profile.id}`} to={`/profile/${profile.id}`}>
               <Card
                 label={profile.job}
