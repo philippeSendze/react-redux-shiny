@@ -5,8 +5,7 @@ import styled from 'styled-components'
 import colors from '../../utils/style/colors'
 import { Loader } from '../../utils/style/Atoms'
 import { SurveyContext } from '../../utils/context'
-import { useFetch } from '../../utils/hooks'
-import { useSelector, useStore } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { selectSurvey, selectTheme } from '../../utils/selectors'
 import { fetchOrUpdateSurvey } from '../../features/survey'
 
@@ -70,11 +69,11 @@ function Survey() {
   const prevQuestionNumber = questionNumberInt === 1 ? 1 : questionNumberInt - 1
   const nextQuestionNumber = questionNumberInt + 1
   const theme = useSelector(selectTheme)
-  const store = useStore()
+  const dispatch = useDispatch()
 
   useEffect(() => {
-    fetchOrUpdateSurvey(store)
-  }, [store])
+    dispatch(fetchOrUpdateSurvey)
+  }, [dispatch])
 
   const survey = useSelector(selectSurvey)
   const isLoading = survey.status === 'void' || survey.status === 'pending'

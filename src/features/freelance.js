@@ -1,4 +1,3 @@
-import produce from 'immer'
 import { selectFreelance } from '../utils/selectors'
 import { createAction, createReducer } from '@reduxjs/toolkit'
 
@@ -25,21 +24,23 @@ const freelanceRejected = createAction(
     payload: { freelanceId, error },
   })
 )
-export async function fetchOrUpdateFreelance(store, freelanceId) {
-  const selectFreelanceById = selectFreelance(freelanceId)
-  const status = selectFreelanceById(store.getState()).status
-  if (status === 'pending' || status === 'updating') {
-    return
-  }
-  store.dispatch(freelanceFetching(freelanceId))
-  try {
-    const response = await fetch(
-      `http://localhost:8000/freelance?id=${freelanceId}`
-    )
-    const data = await response.json()
-    store.dispatch(freelanceResolved(freelanceId, data))
-  } catch (error) {
-    store.dispatch(freelanceRejected(freelanceId, error))
+export function fetchOrUpdateFreelance(freelanceId) {
+  return async (dispatch, getState) => {
+    const selectFreelanceById = selectFreelance(freelanceId)
+    const status = selectFreelanceById(getState()).status
+    if (status === 'pending' || status === 'updating') {
+      return
+    }
+    dispatch(freelanceFetching(freelanceId))
+    try {
+      const response = await fetch(
+        `http://localhost:8000/freelance?id=${freelanceId}`
+      )
+      const data = await response.json()
+      dispatch(freelanceResolved(freelanceId, data))
+    } catch (error) {
+      dispatch(freelanceRejected(freelanceId, error))
+    }
   }
 }
 

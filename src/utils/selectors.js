@@ -10,3 +10,5 @@ export const selectFreelance = (freelanceId) => (state) => {
 }
 
 export const selectSurvey = (state) => state.survey
+
+export const selectResults = (state) => state.results
