@@ -1,5 +1,5 @@
 import { selectFreelances } from '../utils/selectors'
-import { createAction, createReducer } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 
 // Le state initial de la feature freelances
 const initialState = {
@@ -11,15 +11,27 @@ const initialState = {
   error: null,
 }
 
-const freelancesFetching = createAction('freelances/fetching')
-const freelancesResolved = createAction('freelances/resolved')
-const freelancesRejected = createAction('freelances/rejected')
+export async function fetchOrUpdateFreelances(dispatch, getState) {
+  const status = selectFreelances(getState()).status
+  if (status === 'pending' || status === 'updating') {
+    return
+  }
+  dispatch(actions.fetching())
+  try {
+    const response = await fetch('http://localhost:8000/freelances')
+    const data = await response.json()
+    dispatch(actions.resolved(data))
+  } catch (error) {
+    dispatch(actions.rejected(error))
+  }
+}
 
-export default createReducer(initialState, (builder) =>
-  builder
-    // si l'action est de type Fetching
-    .addCase(freelancesFetching, (draft) => {
-      // si le statut est void
+const { actions, reducer } = createSlice({
+  name: 'freelances',
+  initialState,
+  reducers: {
+    // fetching action & reducer
+    fetching: (draft) => {
       if (draft.status === 'void') {
         // on passe en pending
         draft.status = 'pending'
@@ -40,9 +52,9 @@ export default createReducer(initialState, (builder) =>
       }
       // sinon l'action est ignorée
       return
-    })
-    // si l'action est de type Resolved
-    .addCase(freelancesResolved, (draft, action) => {
+    },
+    // resolved action & reducer
+    resolved: (draft, action) => {
       // si la requête est en cours
       if (draft.status === 'pending' || draft.status === 'updating') {
         // on passe en resolved et on sauvegarde les données
@@ -52,9 +64,9 @@ export default createReducer(initialState, (builder) =>
       }
       // sinon l'action est ignorée
       return
-    })
-    // si l'action est de type Rejected
-    .addCase(freelancesRejected, (draft, action) => {
+    },
+    // rejected action & reducer
+    rejected: (draft, action) => {
       // si la requête est en cours
       if (draft.status === 'pending' || draft.status === 'updating') {
         // on passe en rejected, on sauvegarde l'erreur et on supprime les données
@@ -65,20 +77,8 @@ export default createReducer(initialState, (builder) =>
       }
       // sinon l'action est ignorée
       return
-    })
-)
+    },
+  },
+})
 
-export async function fetchOrUpdateFreelances(dispatch, getState) {
-  const status = selectFreelances(getState()).status
-  if (status === 'pending' || status === 'updating') {
-    return
-  }
-  dispatch(freelancesFetching())
-  try {
-    const response = await fetch('http://localhost:8000/freelances')
-    const data = await response.json()
-    dispatch(freelancesResolved(data))
-  } catch (error) {
-    dispatch(freelancesRejected(error))
-  }
-}
+export default reducer

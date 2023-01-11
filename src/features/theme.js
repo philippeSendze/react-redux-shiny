@@ -1,18 +1,20 @@
-import { createAction, createReducer } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 
-const TOGGLE_THEME = 'theme/toggle'
-const SET_THEME = 'theme/set'
-
-export const toggleTheme = createAction(TOGGLE_THEME)
-
-export const setTheme = createAction(SET_THEME)
-
-export default createReducer('light', (builder) =>
-  builder
-    .addCase(toggleTheme, (state) => {
+const themeSlice = createSlice({
+  name: 'theme',
+  initialState: 'light',
+  reducers: {
+    toggle: (state) => {
       return state === 'light' ? 'dark' : 'light'
-    })
-    .addCase(setTheme, (state, action) => {
+    },
+    set: (state, action) => {
       return action.payload
-    })
-)
+    },
+  },
+})
+
+const { actions, reducer } = themeSlice
+
+export const { set, toggle } = actions
+
+export default reducer
